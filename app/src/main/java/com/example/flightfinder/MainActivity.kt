@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -33,6 +34,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.flightfinder.ui.theme.FlightFinderTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.ui.NavDisplay
+import com.example.flightfinder.vues.Radar
 
 
 class DestinationRadar
@@ -59,8 +65,11 @@ fun Main() {
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.primary,
+                    containerColor = Color(0xFF090909),
+//                    titleContentColor = Color(0xFF2dbdb4),
+                    titleContentColor = Color(0xFFfe9d15),
+                    navigationIconContentColor = Color(0xFFfe9d15),
+                    actionIconContentColor = Color(0xFFfe9d15)
                 ),
                 title = {
                     val current = backStack.lastOrNull()
@@ -94,40 +103,32 @@ fun Main() {
     ) { innerPadding ->
         val flights by viewModel.flightsState.collectAsState()
 
-        LazyColumn(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-        ) {
-            items(flights) { state ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    elevation = CardDefaults.cardElevation(4.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp)
-                    ) {
-                        Text(
-                            text = "Callsign: ${state.callsign ?: "N/A"}",
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Text("ICAO24: ${state.icao24}")
-                        Text("Pays: ${state.originCountry}")
-                        Text("Position: ${state.latitude ?: "N/A"}, ${state.longitude ?: "N/A"}")
-                        Text("Altitude baro: ${state.baroAltitude ?: "N/A"} m")
-                        Text("Altitude geo: ${state.geoAltitude ?: "N/A"} m")
-                        Text("Vitesse: ${state.velocity ?: "N/A"} m/s")
-                        Text("Cap: ${state.trueTrack ?: "N/A"}°")
-                        Text("Taux vertical: ${state.verticalRate ?: "N/A"} m/s")
-                        Text("Au sol: ${if (state.onGround) "Oui" else "Non"}")
-                        state.squawk?.let { Text("Squawk: $it") }
+        Column(
+            modifier = Modifier.padding(innerPadding)
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.SpaceEvenly,
+            horizontalAlignment = Alignment.CenterHorizontally) {
+            NavDisplay(
+                backStack = backStack,
+                onBack = { backStack.removeLastOrNull() },
+                entryProvider = { key ->
+                    when (key) {
+                        is DestinationRadar -> NavEntry(key) {
+                            Radar(flights)
+                        }
+                        is DestinationParamettres -> NavEntry(key) {
+                            Radar(flights)
+                        }
+                        is DestinationFavoris -> NavEntry(key) {
+                            Radar(flights)
+                        }
+                        else -> {
+                            error("Unknown key $key")
+                        }
                     }
                 }
-            }
+            )
         }
-
     }
 }
 
