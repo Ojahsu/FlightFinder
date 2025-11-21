@@ -16,21 +16,22 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import com.example.flightfinder.MainViewmodel
 
 @Composable
-fun Liste(viewModel: MainViewmodel){
-    val flights = viewModel.flightsState.collectAsState().value
+fun Favoris(viewModel: MainViewmodel){
+    val flights = viewModel.localFlights.collectAsState().value
 
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        items(flights) { state ->
+        items(flights) { plane ->
             Card(
                 modifier = Modifier
                     .clickable(
-                        onClick = { viewModel.insertFlightToDatabase(state) }
+                        onClick = { viewModel.clearDatabase() }
                     )
                     .fillMaxWidth()
                     .padding(8.dp),
@@ -38,20 +39,15 @@ fun Liste(viewModel: MainViewmodel){
                 Column(
                     modifier = Modifier.padding(16.dp)
                 ) {
+                    AsyncImage(
+                        model = "${plane.photo?.link}",
+                        contentDescription = "Bannière de l'évènement",
+                    )
                     Text(
-                        text = "Callsign: ${state.callsign ?: "N/A"}",
+                        text = "Callsign: ${plane.nom ?: "N/A"}",
                         style = MaterialTheme.typography.titleMedium
                     )
-                    Text("ICAO24: ${state.icao24}")
-                    Text("Pays: ${state.originCountry}")
-                    Text("Position: ${state.latitude ?: "N/A"}, ${state.longitude ?: "N/A"}")
-                    Text("Altitude baro: ${state.baroAltitude ?: "N/A"} m")
-                    Text("Altitude geo: ${state.geoAltitude ?: "N/A"} m")
-                    Text("Vitesse: ${state.velocity ?: "N/A"} m/s")
-                    Text("Cap: ${state.trueTrack ?: "N/A"}°")
-                    Text("Taux vertical: ${state.verticalRate ?: "N/A"} m/s")
-                    Text("Au sol: ${if (state.onGround) "Oui" else "Non"}")
-                    state.squawk?.let { Text("Squawk: $it") }
+                    Text("ICAO24: ${plane.icao24}")
                 }
             }
         }

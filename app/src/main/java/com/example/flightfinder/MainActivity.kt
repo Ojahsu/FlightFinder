@@ -38,6 +38,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.ui.NavDisplay
+import com.example.flightfinder.vues.Favoris
+import com.example.flightfinder.vues.Liste
 import com.example.flightfinder.vues.Radar
 
 
@@ -82,8 +84,7 @@ fun Main() {
                     Text(titleText)
                 },
                 navigationIcon = {
-                    IconButton(onClick = {}) {
-
+                    IconButton(onClick = {backStack.add(DestinationParamettres())}) {
                         Icon(
                             imageVector = Icons.Default.Menu,
                             contentDescription = "Ouvrir le menu"
@@ -91,7 +92,7 @@ fun Main() {
                     }
                 },
                 actions = {
-                    IconButton(onClick = {}) {
+                    IconButton(onClick = {backStack.add(DestinationFavoris())}) {
                         Icon(
                             imageVector = Icons.Default.Favorite,
                             contentDescription = "Ouvrir le menu"
@@ -117,10 +118,10 @@ fun Main() {
                             Radar(flights)
                         }
                         is DestinationParamettres -> NavEntry(key) {
-                            Radar(flights)
+                            Favoris(viewModel)
                         }
                         is DestinationFavoris -> NavEntry(key) {
-                            Radar(flights)
+                            Liste(viewModel)
                         }
                         else -> {
                             error("Unknown key $key")

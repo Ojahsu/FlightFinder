@@ -11,7 +11,7 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 
 @Serializable
-data class Flight(
+data class FlightFromAPI(
     @SerialName("time")
     val time: Long? = null,
 
