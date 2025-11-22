@@ -5,15 +5,11 @@ import android.content.Context
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.room.Room
-import com.example.flightfinder.database.AppDatabase
-import com.example.flightfinder.database.FlightConvecters
 import com.example.flightfinder.models.FlightFromBDD
 import com.example.flightfinder.models.States
 import com.example.flightfinder.repository.FlightAPIRepository
 import com.example.flightfinder.repository.FlightDatabaseRepository
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import com.example.flightfinder.repository.OSNAircraftRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,6 +22,7 @@ class MainViewmodel(application: Application) : AndroidViewModel(application) {
 
     private val flightAPIRepository = FlightAPIRepository()
     private val flightDatabaseRepository = FlightDatabaseRepository(context)
+    private val onsAircraftRepository = OSNAircraftRepository()
 
     private val _flightsState = MutableStateFlow<List<States>>(emptyList())
     val flightsState: StateFlow<List<States>> = _flightsState.asStateFlow()
@@ -53,8 +50,13 @@ class MainViewmodel(application: Application) : AndroidViewModel(application) {
 
     fun insertFlightToDatabase(state: States) {
         viewModelScope.launch {
-            flightDatabaseRepository.insertFlight(state)
+            if ( flightDatabaseRepository.getFlightByICAO(state.icao24) == null ) {
+                val aircraft = onsAircraftRepository.getAircraftByICAO(state.icao24)
+                Log.d("insertFlightToDatabase", "Avion envoyé: ${aircraft?.registration}")
+                flightDatabaseRepository.insertFlight(state, aircraft)
+            }
         }
+        getAllLocalFlights()
     }
 
     fun getAllLocalFlights() {

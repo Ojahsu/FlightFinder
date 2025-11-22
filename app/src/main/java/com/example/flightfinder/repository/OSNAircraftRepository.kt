@@ -36,13 +36,14 @@ class OSNAircraftRepository {
         }
     }
 
-//    suspend fun getAircraftByICAO(icao: String): OSNAircraft {
-//        return try {
-//            val url = "https://opensky-network.org/api/metadata/aircraft/icao/$icao"
-//            val response: OSNAircraft = client.get(url).body()
-//            response ?: OSNAircraft()
-//        } catch (e: Exception) {
-//            null
-//        }
-//    }
+    suspend fun getAircraftByICAO(icao: String): OSNAircraft? {
+        return try {
+            val url = "https://opensky-network.org/api/metadata/aircraft/icao/$icao"
+            val response: OSNAircraft = client.get(url).body()
+            Log.d("Avion recu de la requette", response.toString())
+            response
+        } catch (e: Exception) {
+            null
+        }
+    }
 }

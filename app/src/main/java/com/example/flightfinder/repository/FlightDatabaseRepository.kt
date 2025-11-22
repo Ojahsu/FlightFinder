@@ -5,9 +5,8 @@ import android.util.Log
 import androidx.room.Room
 import com.example.flightfinder.database.AppDatabase
 import com.example.flightfinder.database.FlightConvecters
-import com.example.flightfinder.models.FlightFromAPI
 import com.example.flightfinder.models.FlightFromBDD
-import com.example.flightfinder.models.Photo
+import com.example.flightfinder.models.OSNAircraft
 import com.example.flightfinder.models.States
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -25,8 +24,9 @@ class FlightDatabaseRepository(context: Context) {
 
     // --- Méthodes pour interagir avec la BDD ---
 
-    suspend fun insertFlight(state: States) {
-        val photo = flightAPIRepository.getPhoto(state.callsign ?: "")
+    suspend fun insertFlight(state: States, aircraft: OSNAircraft?) {
+        Log.d("FlightDatabaseRepository", "Avion reçu: $aircraft")
+        val photo = flightAPIRepository.getPhoto(aircraft?.registration ?: "")
         Log.d("FlightDatabaseRepository", "Inserting flight with photo: $photo")
         dao.insertFlight(FlightFromBDD(0, photo,
             state.icao24 ?: "",
@@ -46,7 +46,8 @@ class FlightDatabaseRepository(context: Context) {
         dao.deleteAllFlights()
     }
 
-    suspend fun getFlightById(id: Int): FlightFromBDD? {
-        return dao.getFlightById(id)
+    suspend fun getFlightByICAO(icao: String): FlightFromBDD? {
+        val flight = dao.getFlightByICAO(icao)
+        return flight
     }
 }

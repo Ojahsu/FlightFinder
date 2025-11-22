@@ -8,12 +8,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
@@ -40,8 +38,8 @@ fun Favoris(viewModel: MainViewmodel){
                     modifier = Modifier.padding(16.dp)
                 ) {
                     AsyncImage(
-                        model = "${plane.photo?.link}",
-                        contentDescription = "Bannière de l'évènement",
+                        model = plane.photo?.image,
+                        contentDescription = "Photo de l'avion",
                     )
                     Text(
                         text = "Callsign: ${plane.nom ?: "N/A"}",

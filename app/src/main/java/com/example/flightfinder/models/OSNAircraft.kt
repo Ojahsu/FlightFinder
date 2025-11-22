@@ -1,17 +1,16 @@
 package com.example.flightfinder.models
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class OSNAircraft(
     val acars: Boolean? = null,
     val adsb: Boolean? = null,
-    val built: Any? = null,
     val categoryDescription: String? = null,
     val country: String? = null,
     val engines: String? = null,
-    val firstFlightDate: Any? = null,
-    val firstSeen: Any? = null,
     val icao24: String? = null,
     val icaoAircraftClass: String? = null,
-    val lastSeen: Any? = null,
     val lineNumber: String? = null,
     val manufacturerIcao: String? = null,
     val manufacturerName: String? = null,
@@ -23,8 +22,6 @@ data class OSNAircraft(
     val operatorIata: String? = null,
     val operatorIcao: String? = null,
     val owner: String? = null,
-    val regUntil: Any? = null,
-    val registered: Any? = null,
     val registration: String? = null,
     val selCal: String? = null,
     val serialNumber: String? = null,

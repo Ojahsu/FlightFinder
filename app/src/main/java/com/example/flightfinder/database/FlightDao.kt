@@ -22,4 +22,7 @@ interface FlightDao {
 
     @Query("DELETE FROM FlightFromBDD WHERE id = :id")
     suspend fun deleteFlight(id: Int)
+
+    @Query("SELECT * FROM FlightFromBDD WHERE icao24 = :icao")
+    suspend fun getFlightByICAO(icao: String): FlightFromBDD?
 }

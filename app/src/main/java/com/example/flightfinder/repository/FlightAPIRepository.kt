@@ -48,12 +48,12 @@ class FlightAPIRepository {
         }
     }
 
-    suspend fun getPhoto(callsign: String): Photo? {
+    suspend fun getPhoto(reg: String): Photo? {
         return try {
-            val cleanCallsign = callsign.trim()
-            val url = "https://www.jetapi.dev/api?reg=$cleanCallsign&photos=1&only_jp=true"
+            val reg = reg.trim()
+            val url = "https://www.jetapi.dev/api?reg=$reg&photos=1&only_jp=true"
 
-            Log.d("FlightRepository", "🔍 Recherche photo pour callsign: '$cleanCallsign'")
+            Log.d("FlightRepository", "🔍 Recherche photo pour callsign: '$reg'")
             Log.d("FlightRepository", "📡 URL: $url")
 
             // ✅ Récupérer la réponse HTTP brute
@@ -82,7 +82,7 @@ class FlightAPIRepository {
             photo
 
         } catch (e: Exception) {
-            Log.e("FlightRepository", "❌ Erreur photo pour '$callsign': ${e.message}", e)
+            Log.e("FlightRepository", "❌ Erreur photo pour '$reg': ${e.message}", e)
             null
         }
     }
