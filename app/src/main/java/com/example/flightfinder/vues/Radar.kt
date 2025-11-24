@@ -35,6 +35,11 @@ import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import kotlin.compareTo
+import kotlin.text.clear
+import kotlin.text.get
+import kotlin.text.set
+import kotlin.text.toFloat
+import kotlin.text.toInt
 
 // ═══════════════════════════════════════════════════
 // CONFIGURATION DES TUILES DE CARTE
@@ -149,6 +154,25 @@ fun Radar(
         }
     }
 
+    // Animation de la progress bar
+    LaunchedEffect(refreshInterval) {
+        while (true) {
+            val startTime = System.currentTimeMillis()
+            while (true) {
+                val elapsed = System.currentTimeMillis() - startTime
+                refreshProgress = (elapsed.toFloat() / refreshInterval).coerceIn(0f, 1f)
+
+                if (elapsed >= refreshInterval) {
+                    refreshProgress = 0f
+                    break
+                }
+
+                delay(50) // Mise à jour toutes les 50ms
+            }
+        }
+    }
+
+
     val generalColor = if (userPreferences.isDarkTheme) {
         Color(0xFF2dbdb4)
     } else {
@@ -226,14 +250,16 @@ fun Radar(
                 }
             },
             update = { mapView ->
-                // Changement de style si le thème change
-                mapView.setTileSource(
-                    if (userPreferences.isDarkTheme) {
-                        DARK_MAP_TILE_SOURCE
-                    } else {
-                        LIGHT_MAP_TILE_SOURCE
-                    }
-                )
+                // Ne changer le style que si le thème a réellement changé
+                val currentTileSource = if (userPreferences.isDarkTheme) {
+                    DARK_MAP_TILE_SOURCE
+                } else {
+                    LIGHT_MAP_TILE_SOURCE
+                }
+
+                if (mapView.tileProvider.tileSource != currentTileSource) {
+                    mapView.setTileSource(currentTileSource)
+                }
 
                 // Nettoyage des overlays existants
                 mapView.overlays.clear()
@@ -261,29 +287,21 @@ fun Radar(
                         val marker = Marker(mapView).apply {
                             position = GeoPoint(flight.latitude!!, flight.longitude!!)
 
-                            // Titre du marker
                             title = if (userPreferences.showAircraftLabels) {
                                 flight.callsign?.trim() ?: "Vol inconnu"
                             } else {
                                 ""
                             }
 
-                            // Stockage des données pour l'info window
                             relatedObject = flight
 
-                            // Rotation selon la direction du vol
                             flight.trueTrack?.let { track ->
-                                rotation = track.toFloat()
+                                rotation = (track - 90f).toFloat()
                             }
 
-                            // Centrage de l'icône
                             setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
-
-                            // Custom InfoWindow
                             infoWindow = infoAdapter
 
-                            // Chargement et redimensionnement de l'icône
-                            // Chargement et redimensionnement de l'icône
                             try {
                                 val drawableRes = when {
                                     isInFavoris -> R.drawable.ic_airplane_rouge
@@ -291,23 +309,13 @@ fun Radar(
                                     else -> R.drawable.ic_airplane_orange
                                 }
 
-                                val drawable = ContextCompat.getDrawable(
-                                    mapView.context,
-                                    drawableRes
-                                )
+                                val drawable = ContextCompat.getDrawable(mapView.context, drawableRes)
 
                                 drawable?.let { d ->
-                                    // Calcul de la taille selon zoom et préférences
-                                    val zoom = mapView.zoomLevelDouble
-                                    val baseSize = 50 * userPreferences.aircraftIconScale
-                                    val scaleFactor = (zoom / 5.0)
-                                    val iconSize = (baseSize * scaleFactor)
-                                        .toInt()
-                                        .coerceIn(24, 200)
-
+                                    val baseSize = 75 * userPreferences.aircraftIconScale
+                                    val iconSize = baseSize.toInt().coerceIn(24, 200)
                                     val cacheKey = iconSize * 10000 + drawableRes
 
-                                    // Utilisation du cache ou création
                                     val cachedIcon = iconCache[cacheKey] ?: run {
                                         val resized = resizeDrawable(d, iconSize, iconSize)
                                         iconCache[cacheKey] = resized
@@ -317,7 +325,7 @@ fun Radar(
                                     icon = cachedIcon
                                 }
                             } catch (e: Exception) {
-                                android.util.Log.e("Radar", "Erreur chargement icône", e)
+                                Log.e("Radar", "Erreur chargement icône", e)
                             }
                         }
 
@@ -325,12 +333,12 @@ fun Radar(
                     }
                 }
 
-                // Mise à jour du compteur
                 visibleFlights = count
 
-                // Rafraîchissement de la carte
-                mapView.invalidate()
+                // Utiliser postInvalidate() au lieu de invalidate() pour éviter les problèmes de threading
+                mapView.postInvalidate()
             }
+
         )
 
         // ═══════════════════════════════════════════════

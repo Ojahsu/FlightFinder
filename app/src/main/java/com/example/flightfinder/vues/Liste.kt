@@ -23,10 +23,8 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.GpsFixed
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.MoreVert
@@ -59,7 +57,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import com.example.flightfinder.MainViewmodel
 import com.example.flightfinder.R
 
@@ -157,7 +154,6 @@ fun Liste(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color(0xFF090909))
                 .padding(16.dp)
         ) {
             OutlinedTextField(
@@ -734,7 +730,7 @@ fun Liste(
                                         .fillMaxWidth()
                                         .clickable {
                                             // définir le vol sélectionné dans le ViewModel
-                                            viewModel.selectFlight(state)
+                                            viewModel.selectFlightByIcao(state.icao24)
                                             // naviguer vers l'écran Radar
                                             onNavigateToRadar()
                                         },

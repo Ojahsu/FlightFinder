@@ -1,5 +1,6 @@
 package com.example.flightfinder.vues
 
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.RemoveRedEye
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -49,7 +51,10 @@ import com.example.flightfinder.MainViewmodel
 import com.example.flightfinder.R
 
 @Composable
-fun Favoris(viewModel: MainViewmodel){
+fun Favoris(
+    viewModel: MainViewmodel,
+    onNavigateToRadar: () -> Unit
+){
     val flights = viewModel.localFlights.collectAsState().value
     val userPreferences by viewModel.userPreferences.collectAsState()
 
@@ -85,7 +90,7 @@ fun Favoris(viewModel: MainViewmodel){
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(10.dp)
+                    modifier = Modifier.padding(10.dp, 0.dp, 10.dp, 10.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -145,29 +150,33 @@ fun Favoris(viewModel: MainViewmodel){
                         }
                     }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(
-                            modifier = Modifier
+                    if ((aircraft.plane?.manufacturerName != null && aircraft.plane?.manufacturerName != "") ||
+                        (aircraft.plane?.model != null && aircraft.plane?.model != "" )){
+                        Log.d("Favoris", "Manufacturer: ${aircraft.plane?.manufacturerName}, Model: ${aircraft.plane?.model}")
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            if (aircraft.plane?.manufacturerName != null){
-                                Text(
-                                    text = "" + aircraft.plane?.manufacturerName,
-                                    fontSize = 14.sp,
-                                    color = Color(0xFFB0BEC5),
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
+                            Column(
+                                modifier = Modifier
+                            ) {
+                                if (aircraft.plane?.manufacturerName != null) {
+                                    Text(
+                                        text = "" + aircraft.plane?.manufacturerName,
+                                        fontSize = 14.sp,
+                                        color = Color(0xFFB0BEC5),
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
 
-                            if (aircraft.plane?.model != null) {
-                                Text(
-                                    text = "" + aircraft.plane?.model,
-                                    fontSize = 13.sp,
-                                    color = Color(0xFF78909C)
-                                )
+                                if (aircraft.plane?.model != null) {
+                                    Text(
+                                        text = "" + aircraft.plane?.model,
+                                        fontSize = 13.sp,
+                                        color = Color(0xFF78909C)
+                                    )
+                                }
                             }
                         }
                     }
@@ -191,7 +200,49 @@ fun Favoris(viewModel: MainViewmodel){
                             contentScale = ContentScale.Crop
                         )
 
-                        Spacer(modifier = Modifier.padding(2.dp))
+                        if(viewModel.flightsState.value.any { it.icao24 == aircraft.icao24 })
+                        {
+                            Spacer(modifier = Modifier.padding(4.dp))
+
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        // définir le vol sélectionné dans le ViewModel
+                                        viewModel.selectFlightByIcao(aircraft.icao24)
+                                        // naviguer vers l'écran Radar
+                                        onNavigateToRadar()
+                                    },
+                                shape = RoundedCornerShape(8.dp),
+                                color = generalColor.copy(alpha = 0.1f),
+                                border = BorderStroke(1.dp, generalColor)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(
+                                        horizontal = 12.dp,
+                                        vertical = 10.dp
+                                    ),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.RemoveRedEye,
+                                        contentDescription = null,
+                                        tint = generalColor,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "Voir en direct",
+                                        fontSize = 14.sp,
+                                        color = generalColor,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.padding(4.dp))
 
                         Surface(
                             modifier = Modifier

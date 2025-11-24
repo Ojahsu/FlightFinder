@@ -12,6 +12,8 @@ import com.example.flightfinder.repository.FlightAPIRepository
 import com.example.flightfinder.repository.FlightDatabaseRepository
 import com.example.flightfinder.repository.OSNAircraftRepository
 import com.example.flightfinder.repository.UserPreferencesRepository
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -21,55 +23,119 @@ import kotlinx.coroutines.launch
 
 class MainViewmodel(application: Application) : AndroidViewModel(application) {
 
+    // ═══════════════════════════════════════════════════════════
+    // 🔧 PROPERTIES
+    // ═══════════════════════════════════════════════════════════
+
     private val context: Context
         get() = getApplication<Application>().applicationContext
 
     private val flightAPIRepository = FlightAPIRepository()
     private val flightDatabaseRepository = FlightDatabaseRepository(context)
     private val onsAircraftRepository = OSNAircraftRepository()
+    val userPreferencesRepository = UserPreferencesRepository(context)
+
+    // ═══════════════════════════════════════════════════════════
+    // 📊 STATE FLOWS
+    // ═══════════════════════════════════════════════════════════
 
     private val _flightsState = MutableStateFlow<List<States>>(emptyList())
     val flightsState: StateFlow<List<States>> = _flightsState.asStateFlow()
 
     val localFlights = MutableStateFlow<List<FlightFromBDD>>(emptyList())
 
-    val userPreferencesRepository = UserPreferencesRepository(context)
-
     private val _selectedFlight = MutableStateFlow<States?>(null)
     val selectedFlight: StateFlow<States?> = _selectedFlight.asStateFlow()
-
 
     val userPreferences: StateFlow<UserPreferences> = userPreferencesRepository.userPreferencesFlow
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = UserPreferences() // Valeurs par défaut
+            initialValue = UserPreferences()
         )
+
+    // ═══════════════════════════════════════════════════════════
+    // ⏱️ AUTO-REFRESH
+    // ═══════════════════════════════════════════════════════════
+
+    private var refreshJob: Job? = null
+
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
+    // ═══════════════════════════════════════════════════════════
+    // 🚀 INITIALIZATION
+    // ═══════════════════════════════════════════════════════════
 
     init {
         getFlights()
         getAllLocalFlights()
+        startAutoRefresh()
     }
+
+    // ═══════════════════════════════════════════════════════════
+    // 🔄 AUTO-REFRESH LOGIC
+    // ═══════════════════════════════════════════════════════════
+
+    /**
+     * Démarre le rafraîchissement automatique basé sur les préférences
+     */
+    private fun startAutoRefresh() {
+        viewModelScope.launch {
+            userPreferences.collect { prefs ->
+                refreshJob?.cancel()
+                refreshJob = launch {
+                    while (true) {
+                        delay(userPreferences.value.refreshIntervalSeconds * 1000L) // Convertir secondes en ms
+                        Log.d(TAG, "Auto-refresh: ${userPreferences.value.refreshIntervalSeconds}s")
+                        getFlights()
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Rafraîchissement manuel (pour le pull-to-refresh)
+     */
+    fun refreshFlights() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            try {
+                getFlights()
+            } finally {
+                _isRefreshing.value = false
+            }
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // ✈️ FLIGHTS API
+    // ═══════════════════════════════════════════════════════════
 
     fun getFlights() {
         viewModelScope.launch {
             try {
-                Log.d("MainViewModel", "Début de la récupération des vols")
+                Log.d(TAG, "Début de la récupération des vols")
                 val states = flightAPIRepository.getFlights()
                 _flightsState.value = states
-                Log.d("MainViewModel", "Vols récupérés: ${states.size}")
+                Log.d(TAG, "Vols récupérés: ${states.size}")
             } catch (e: Exception) {
-                Log.e("MainViewModel", "Erreur lors de la récupération des vols", e)
+                Log.e(TAG, "Erreur lors de la récupération des vols", e)
                 _flightsState.value = emptyList()
             }
         }
     }
 
+    // ═══════════════════════════════════════════════════════════
+    // 💾 DATABASE OPERATIONS
+    // ═══════════════════════════════════════════════════════════
+
     fun insertFlightToDatabase(state: States) {
         viewModelScope.launch {
-            if ( flightDatabaseRepository.getFlightByICAO(state.icao24) == null ) {
+            if (flightDatabaseRepository.getFlightByICAO(state.icao24) == null) {
                 val aircraft = onsAircraftRepository.getAircraftByICAO(state.icao24)
-                Log.d("insertFlightToDatabase", "Avion envoyé: ${aircraft?.registration}")
+                Log.d(TAG, "Avion envoyé: ${aircraft?.registration}")
                 flightDatabaseRepository.insertFlight(state, aircraft)
                 getAllLocalFlights()
             }
@@ -97,7 +163,12 @@ class MainViewmodel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun selectFlight(flight: States?) {
+    // ═══════════════════════════════════════════════════════════
+    // 🎯 FLIGHT SELECTION
+    // ═══════════════════════════════════════════════════════════
+
+    fun selectFlightByIcao(icao24: String) {
+        val flight = _flightsState.value.find { it.icao24 == icao24 }
         _selectedFlight.value = flight
     }
 
@@ -105,4 +176,21 @@ class MainViewmodel(application: Application) : AndroidViewModel(application) {
         _selectedFlight.value = null
     }
 
+    // ═══════════════════════════════════════════════════════════
+    // 🧹 LIFECYCLE
+    // ═══════════════════════════════════════════════════════════
+
+    override fun onCleared() {
+        super.onCleared()
+        refreshJob?.cancel()
+        Log.d(TAG, "ViewModel cleared - refresh job cancelled")
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // 🏷️ CONSTANTS
+    // ═══════════════════════════════════════════════════════════
+
+    companion object {
+        private const val TAG = "MainViewModel"
+    }
 }
