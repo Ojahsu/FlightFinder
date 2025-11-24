@@ -7,7 +7,7 @@ import com.example.flightfinder.models.FlightFromBDD
 
 @Database(
     entities = [FlightFromBDD::class],
-    version = 1,
+    version = 2,
 )
 @TypeConverters(FlightConvecters::class)
 abstract class AppDatabase : RoomDatabase() {

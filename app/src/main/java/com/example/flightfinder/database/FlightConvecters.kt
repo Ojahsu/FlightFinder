@@ -4,12 +4,14 @@ import androidx.room.ProvidedTypeConverter
 import androidx.room.TypeConverter
 import com.example.flightfinder.models.FlightFromBDD
 import com.example.flightfinder.models.Photo
+import com.example.flightfinder.models.OSNAircraft
 import com.squareup.moshi.Moshi
 
 @ProvidedTypeConverter
 class FlightConvecters(moshi: Moshi) {
     private val FlightFromBDDAdapter = moshi.adapter(FlightFromBDD::class.java)
     private val PhotoAdapter = moshi.adapter(Photo::class.java)
+    private val OSNAircraftAdapter = moshi.adapter(OSNAircraft::class.java)
 
     @TypeConverter
     fun fromFlight(FlightFromBDD: FlightFromBDD): String {
@@ -29,5 +31,15 @@ class FlightConvecters(moshi: Moshi) {
     @TypeConverter
     fun toPhoto(json: String): Photo? {
         return PhotoAdapter.fromJson(json)
+    }
+
+    @TypeConverter
+    fun fromOSNAircraft(aircraft: OSNAircraft?): String? {
+        return aircraft?.let { OSNAircraftAdapter.toJson(it) }
+    }
+
+    @TypeConverter
+    fun toOSNAircraft(json: String?): OSNAircraft? {
+        return json?.let { OSNAircraftAdapter.fromJson(it) }
     }
 }

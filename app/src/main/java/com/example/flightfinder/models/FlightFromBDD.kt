@@ -10,7 +10,7 @@ data class FlightFromBDD(
     val icao24: String,
     val nom: String? = null,
     val paysOrigine: String? = null,
-    //val historique: Historique? = null,
+    val plane: OSNAircraft? = null,
 ){
 
 }

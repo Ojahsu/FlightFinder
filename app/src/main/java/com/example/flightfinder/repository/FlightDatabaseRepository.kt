@@ -28,9 +28,15 @@ class FlightDatabaseRepository(context: Context) {
         Log.d("FlightDatabaseRepository", "Avion reçu: $aircraft")
         val photo = flightAPIRepository.getPhoto(aircraft?.registration ?: "")
         Log.d("FlightDatabaseRepository", "Inserting flight with photo: $photo")
-        dao.insertFlight(FlightFromBDD(0, photo,
-            state.icao24 ?: "",
-            state.callsign ?: "")
+        // On inclut l'objet 'aircraft' dans le champ 'plane' pour qu'il soit persisté via le converter
+        dao.insertFlight(
+            FlightFromBDD(
+                id = 0,
+                photo = photo,
+                icao24 = state.icao24 ?: "",
+                nom = state.callsign ?: "",
+                plane = aircraft
+            )
         )
     }
 

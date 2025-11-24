@@ -2,6 +2,7 @@ package com.example.flightfinder.utils
 
 import android.view.ViewGroup
 import androidx.compose.ui.platform.ComposeView
+import com.example.flightfinder.MainViewmodel
 import com.example.flightfinder.models.States
 import com.example.flightfinder.vues.AircraftInfoPopup
 import org.osmdroid.views.MapView
@@ -12,7 +13,7 @@ import org.osmdroid.views.overlay.infowindow.InfoWindow
  * Adaptateur qui fait le pont entre osmdroid (View Android classique)
  * et notre Composable AircraftInfoPopup
  */
-class AircraftInfoWindowAdapter(mapView: MapView) : InfoWindow(createComposeView(mapView), mapView) {
+class AircraftInfoWindowAdapter(mapView: MapView, val viewModel: MainViewmodel) : InfoWindow(createComposeView(mapView), mapView) {
 
     companion object {
         private fun createComposeView(mapView: MapView): ComposeView {
@@ -32,7 +33,7 @@ class AircraftInfoWindowAdapter(mapView: MapView) : InfoWindow(createComposeView
         val composeView = mView as? ComposeView ?: return
 
         composeView.setContent {
-            AircraftInfoPopup(flight = flight)
+            AircraftInfoPopup(flight = flight, viewModel = viewModel)
         }
     }
 

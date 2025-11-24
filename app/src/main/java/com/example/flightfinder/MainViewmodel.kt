@@ -7,12 +7,16 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.flightfinder.models.FlightFromBDD
 import com.example.flightfinder.models.States
+import com.example.flightfinder.models.UserPreferences
 import com.example.flightfinder.repository.FlightAPIRepository
 import com.example.flightfinder.repository.FlightDatabaseRepository
 import com.example.flightfinder.repository.OSNAircraftRepository
+import com.example.flightfinder.repository.UserPreferencesRepository
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class MainViewmodel(application: Application) : AndroidViewModel(application) {
@@ -28,6 +32,19 @@ class MainViewmodel(application: Application) : AndroidViewModel(application) {
     val flightsState: StateFlow<List<States>> = _flightsState.asStateFlow()
 
     val localFlights = MutableStateFlow<List<FlightFromBDD>>(emptyList())
+
+    val userPreferencesRepository = UserPreferencesRepository(context)
+
+    private val _selectedFlight = MutableStateFlow<States?>(null)
+    val selectedFlight: StateFlow<States?> = _selectedFlight.asStateFlow()
+
+
+    val userPreferences: StateFlow<UserPreferences> = userPreferencesRepository.userPreferencesFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = UserPreferences() // Valeurs par défaut
+        )
 
     init {
         getFlights()
@@ -54,9 +71,9 @@ class MainViewmodel(application: Application) : AndroidViewModel(application) {
                 val aircraft = onsAircraftRepository.getAircraftByICAO(state.icao24)
                 Log.d("insertFlightToDatabase", "Avion envoyé: ${aircraft?.registration}")
                 flightDatabaseRepository.insertFlight(state, aircraft)
+                getAllLocalFlights()
             }
         }
-        getAllLocalFlights()
     }
 
     fun getAllLocalFlights() {
@@ -73,12 +90,19 @@ class MainViewmodel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-//    override fun onCleared() {
-//        super.onCleared()
-//        flightAPIRepository.close()
-//    }
+    fun deleteFlight(id: Int) {
+        viewModelScope.launch {
+            flightDatabaseRepository.deleteFlight(id)
+            getAllLocalFlights()
+        }
+    }
 
-    // --- Partie BDD ---
+    fun selectFlight(flight: States?) {
+        _selectedFlight.value = flight
+    }
 
+    fun clearSelectedFlight() {
+        _selectedFlight.value = null
+    }
 
 }

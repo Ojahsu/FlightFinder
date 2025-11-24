@@ -52,7 +52,7 @@ class UserPreferencesRepository(private val context: Context) {
                 showFlightTrails = preferences[PreferencesKeys.SHOW_FLIGHT_TRAILS] ?: false,
                 refreshIntervalSeconds = preferences[PreferencesKeys.REFRESH_INTERVAL_SECONDS] ?: 10,
                 hideGroundedAircraft = preferences[PreferencesKeys.HIDE_GROUNDED_AIRCRAFT] ?: false,
-                showAircraftLabels = preferences[PreferencesKeys.SHOW_AIRCRAFT_LABELS] ?: true
+                showAircraftLabels = preferences[PreferencesKeys.SHOW_AIRCRAFT_LABELS] ?: false
             )
         }
 
