@@ -24,10 +24,13 @@ FlightFinder est une application Android développée en Kotlin offrant une visu
 - Écran principal (carte / liste des vols)  
   (Référence via `MainViewmodel` — logique métier et actions globales comme `clearDatabase()`).
 
+### Radar
 ![img.png](img.png)
 
+### Liste des vols
 ![img_1.png](img_1.png)
 
+### Paramètres
 ![img_2.png](img_2.png)
 
 ## Architecture & Technologies
