@@ -45,16 +45,16 @@ class UserPreferencesRepository(private val context: Context) {
         }
         .map { preferences ->
             UserPreferences(
-                isDarkTheme = preferences[PreferencesKeys.IS_DARK_THEME] ?: false,
+                isDarkTheme = preferences[PreferencesKeys.IS_DARK_THEME] ?: true,
                 aircraftIconScale = preferences[PreferencesKeys.AIRCRAFT_ICON_SCALE] ?: 1.0f,
                 defaultMapZoom = preferences[PreferencesKeys.DEFAULT_MAP_ZOOM] ?: 5.0,
                 defaultMapLatitude = preferences[PreferencesKeys.DEFAULT_MAP_LATITUDE] ?: 48.8566,
                 defaultMapLongitude = preferences[PreferencesKeys.DEFAULT_MAP_LONGITUDE] ?: 2.3522,
                 showFlightTrails = preferences[PreferencesKeys.SHOW_FLIGHT_TRAILS] ?: false,
-                refreshIntervalSeconds = preferences[PreferencesKeys.REFRESH_INTERVAL_SECONDS] ?: 10,
+                refreshIntervalSeconds = preferences[PreferencesKeys.REFRESH_INTERVAL_SECONDS] ?: 30,
                 hideGroundedAircraft = preferences[PreferencesKeys.HIDE_GROUNDED_AIRCRAFT] ?: false,
                 showAircraftLabels = preferences[PreferencesKeys.SHOW_AIRCRAFT_LABELS] ?: false,
-                isAutoRefreshEnabled = preferences[PreferencesKeys.IS_AUTO_REFRESH_ENABLED] ?: true
+                isAutoRefreshEnabled = preferences[PreferencesKeys.IS_AUTO_REFRESH_ENABLED] ?: false
             )
         }
 

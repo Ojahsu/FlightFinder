@@ -5,7 +5,7 @@ package com.example.flightfinder.models
  */
 data class UserPreferences(
     // Thème de l'application
-    val isDarkTheme: Boolean = false,
+    val isDarkTheme: Boolean = true,
 
     // Taille des icônes d'avions sur la carte (facteur multiplicateur)
     val aircraftIconScale: Float = 1.0f, // 0.5 à 2.0
@@ -23,15 +23,15 @@ data class UserPreferences(
     val showFlightTrails: Boolean = false,
 
     // Intervalle de rafraîchissement des données (en secondes)
-    val refreshIntervalSeconds: Int = 10,
+    val refreshIntervalSeconds: Int = 30,
 
     // Afficher uniquement les avions en vol (masquer ceux au sol)
     val hideGroundedAircraft: Boolean = false,
 
     // Afficher les labels des avions sur la carte
-    val showAircraftLabels: Boolean = true,
+    val showAircraftLabels: Boolean = false,
 
     // Activer le rafraîchissement automatique des données
-    val isAutoRefreshEnabled: Boolean = true
+    val isAutoRefreshEnabled: Boolean = false
 )
 

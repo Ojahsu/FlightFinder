@@ -155,7 +155,8 @@ fun SettingsScreen(viewModel: MainViewmodel) {
                 valueLabel = { "${(it * 100).toInt()}%" },
                 generalColor = generalColor,
                 textPrimary = textPrimary,
-                textSecondary = textSecondary
+                textSecondary = textSecondary,
+                userPreference = preferences
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -251,7 +252,7 @@ fun SettingsScreen(viewModel: MainViewmodel) {
                 subtitle = "Fréquence de rafraîchissement des données",
                 icon = Icons.Default.Update,
                 value = preferences.refreshIntervalSeconds.toFloat(),
-                valueRange = 5f..60f,
+                valueRange = 15f..120f,
                 steps = 10,
                 onValueChange = {
                     scope.launch {
@@ -261,7 +262,9 @@ fun SettingsScreen(viewModel: MainViewmodel) {
                 valueLabel = { "${it.toInt()}s" },
                 generalColor = generalColor,
                 textPrimary = textPrimary,
-                textSecondary = textSecondary
+                textSecondary = textSecondary,
+                enabled = preferences.isAutoRefreshEnabled,
+                userPreference = preferences
             )
         }
 
@@ -366,12 +369,12 @@ fun ModernSettingsSwitch(
     textSecondary: Color,
     enabled: Boolean = true,
     isDarkTheme: Boolean = false,
-    isConfirmation: Boolean = false, // ✅ Active la popup de confirmation
+    isConfirmation: Boolean = false,
     cardColor: Color = if (isDarkTheme) Color(0xFF121A26) else Color(0xFFF5F5F5),
     preferences: UserPreferences
 ) {
     var showDialog by remember { mutableStateOf(false) }
-    var pendingValue by remember { mutableStateOf(checked) } // ✅ Valeur en attente
+    var pendingValue by remember { mutableStateOf(checked) }
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -416,11 +419,9 @@ fun ModernSettingsSwitch(
             checked = checked,
             onCheckedChange = { newValue ->
                 if (isConfirmation) {
-                    // ✅ Stocke la nouvelle valeur et affiche la popup
                     pendingValue = newValue
                     showDialog = true
                 } else {
-                    // ✅ Pas de confirmation, change directement
                     onCheckedChange(newValue)
                 }
             },
@@ -457,19 +458,16 @@ fun ModernSettingsSwitch(
         )
     }
 
-    // ═══════════════════════════════════════════════════════════
-    // 🚨 DIALOG DE CONFIRMATION
-    // ═══════════════════════════════════════════════════════════
     if (showDialog) {
         AlertDialog(
             containerColor = cardColor,
             titleContentColor = textPrimary,
-            onDismissRequest = { showDialog = false }, // ✅ Annule sans rien faire
+            onDismissRequest = { showDialog = false },
             icon = {
                 Icon(
                     imageVector = Icons.Default.Warning,
                     contentDescription = null,
-                    tint = Color(0xFFFF9800), // Orange pour avertissement
+                    tint = Color(0xFFFF9800),
                     modifier = Modifier.size(32.dp)
                 )
             },
@@ -530,7 +528,9 @@ fun ModernSettingsSlider(
     valueLabel: (Float) -> String,
     generalColor: Color,
     textPrimary: Color,
-    textSecondary: Color
+    textSecondary: Color,
+    enabled: Boolean = true,
+    userPreference: UserPreferences
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
@@ -572,18 +572,34 @@ fun ModernSettingsSlider(
                 }
             }
 
-            Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = generalColor.copy(alpha = 0.2f),
-                border = BorderStroke(1.dp, generalColor)
-            ) {
-                Text(
-                    text = valueLabel(value),
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = generalColor,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                )
+            if (enabled) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = generalColor.copy(alpha = 0.2f),
+                    border = BorderStroke(1.dp, generalColor)
+                ) {
+                    Text(
+                        text = valueLabel(value),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = generalColor,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                    )
+                }
+            } else {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color.Gray.copy(alpha = 0.2f),
+                    border = BorderStroke(1.dp, Color.Gray)
+                ) {
+                    Text(
+                        text = valueLabel(value),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                    )
+                }
             }
         }
 
@@ -594,15 +610,35 @@ fun ModernSettingsSlider(
             onValueChange = onValueChange,
             valueRange = valueRange,
             steps = steps,
-            colors = SliderDefaults.colors(
-                thumbColor = generalColor,
-                activeTrackColor = generalColor,
-                inactiveTrackColor = generalColor.copy(alpha = 0.3f),
-                activeTickColor = Color.White,
-                inactiveTickColor = generalColor.copy(alpha = 0.3f)
-            ),
+            enabled = enabled,
+            colors = if (userPreference.isDarkTheme) {
+                SliderDefaults.colors(
+                    thumbColor = generalColor,
+                    activeTrackColor = generalColor,
+                    inactiveTrackColor = generalColor.copy(alpha = 0.3f),
+                    activeTickColor = Color.White,
+                    inactiveTickColor = generalColor.copy(alpha = 0.3f),
+                    disabledThumbColor = Color.Gray,
+                    disabledActiveTrackColor = Color.LightGray.copy(alpha = 0.1f),
+                    disabledInactiveTrackColor = Color.LightGray.copy(alpha = 0.3f),
+                    disabledActiveTickColor = Color.Gray,
+                    disabledInactiveTickColor = Color.Gray
+                )
+            } else {
+                SliderDefaults.colors(
+                    thumbColor = generalColor,
+                    activeTrackColor = generalColor,
+                    inactiveTrackColor = generalColor.copy(alpha = 0.3f),
+                    activeTickColor = Color.White,
+                    inactiveTickColor = generalColor.copy(alpha = 0.3f),
+                    disabledThumbColor = Color.Gray,
+                    disabledActiveTrackColor = Color.LightGray.copy(alpha = 0.3f),
+                    disabledInactiveTrackColor = Color.LightGray.copy(alpha = 0.3f),
+                    disabledActiveTickColor = Color.Gray,
+                    disabledInactiveTickColor = Color.Gray
+                )
+            },
             modifier = Modifier.padding(horizontal = 8.dp)
-            // TODO : Ajouter le enabled
         )
     }
 }
