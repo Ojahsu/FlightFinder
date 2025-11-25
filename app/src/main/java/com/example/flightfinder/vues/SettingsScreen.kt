@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.flightfinder.MainViewmodel
@@ -126,7 +127,8 @@ fun SettingsScreen(viewModel: MainViewmodel) {
                 generalColor = generalColor,
                 textPrimary = textPrimary,
                 textSecondary = textSecondary,
-                isDarkTheme = preferences.isDarkTheme
+                isDarkTheme = preferences.isDarkTheme,
+                preferences = preferences
             )
         }
 
@@ -171,7 +173,8 @@ fun SettingsScreen(viewModel: MainViewmodel) {
                 generalColor = generalColor,
                 textPrimary = textPrimary,
                 textSecondary = textSecondary,
-                isDarkTheme = preferences.isDarkTheme
+                isDarkTheme = preferences.isDarkTheme,
+                preferences = preferences
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -190,7 +193,8 @@ fun SettingsScreen(viewModel: MainViewmodel) {
                 textPrimary = textPrimary,
                 textSecondary = textSecondary,
                 enabled = false,
-                isDarkTheme = preferences.isDarkTheme
+                isDarkTheme = preferences.isDarkTheme,
+                preferences = preferences
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -209,7 +213,8 @@ fun SettingsScreen(viewModel: MainViewmodel) {
                 textPrimary = textPrimary,
                 textSecondary = textSecondary,
                 enabled = false,
-                isDarkTheme = preferences.isDarkTheme
+                isDarkTheme = preferences.isDarkTheme,
+                preferences = preferences
             )
         }
 
@@ -221,6 +226,26 @@ fun SettingsScreen(viewModel: MainViewmodel) {
             textPrimary = textPrimary,
             textSecondary = textSecondary
         ) {
+            ModernSettingsSwitch(
+                title = "Activer l'auto rafraichissement",
+                subtitle = "Rafraîchir automatiquement les données des vols",
+                icon = Icons.Default.Sync,
+                checked = preferences.isAutoRefreshEnabled,
+                onCheckedChange = {
+                    scope.launch {
+                        preferencesRepository.updateIsAutoRefreshEnabled(it)
+                    }
+                },
+                generalColor = generalColor,
+                textPrimary = textPrimary,
+                textSecondary = textSecondary,
+                isDarkTheme = preferences.isDarkTheme,
+                isConfirmation = true,
+                preferences = preferences
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
             ModernSettingsSlider(
                 title = "Intervalle de mise à jour",
                 subtitle = "Fréquence de rafraîchissement des données",
@@ -270,6 +295,7 @@ fun SettingsScreen(viewModel: MainViewmodel) {
 
         // Footer
         Spacer(modifier = Modifier.height(16.dp))
+
         Text(
             text = "FlightFinder v1.0 • Tous les paramètres sont sauvegardés automatiquement",
             fontSize = 11.sp,
@@ -339,8 +365,14 @@ fun ModernSettingsSwitch(
     textPrimary: Color,
     textSecondary: Color,
     enabled: Boolean = true,
-    isDarkTheme: Boolean = false
+    isDarkTheme: Boolean = false,
+    isConfirmation: Boolean = false, // ✅ Active la popup de confirmation
+    cardColor: Color = if (isDarkTheme) Color(0xFF121A26) else Color(0xFFF5F5F5),
+    preferences: UserPreferences
 ) {
+    var showDialog by remember { mutableStateOf(false) }
+    var pendingValue by remember { mutableStateOf(checked) } // ✅ Valeur en attente
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -380,11 +412,20 @@ fun ModernSettingsSwitch(
             }
         }
 
-        if (isDarkTheme) {
-            Switch(
-                checked = checked,
-                onCheckedChange = onCheckedChange,
-                colors = SwitchDefaults.colors(
+        Switch(
+            checked = checked,
+            onCheckedChange = { newValue ->
+                if (isConfirmation) {
+                    // ✅ Stocke la nouvelle valeur et affiche la popup
+                    pendingValue = newValue
+                    showDialog = true
+                } else {
+                    // ✅ Pas de confirmation, change directement
+                    onCheckedChange(newValue)
+                }
+            },
+            colors = if (isDarkTheme) {
+                SwitchDefaults.colors(
                     checkedThumbColor = Color.White,
                     checkedTrackColor = generalColor,
                     uncheckedThumbColor = Color.White,
@@ -396,14 +437,9 @@ fun ModernSettingsSwitch(
                     disabledUncheckedTrackColor = Color.LightGray.copy(alpha = 0.1f),
                     disabledCheckedBorderColor = Color.LightGray.copy(alpha = 0.1f),
                     disabledUncheckedBorderColor = Color.LightGray.copy(alpha = 0.1f)
-                ),
-                enabled = enabled
-            )
-        } else {
-            Switch(
-                checked = checked,
-                onCheckedChange = onCheckedChange,
-                colors = SwitchDefaults.colors(
+                )
+            } else {
+                SwitchDefaults.colors(
                     checkedThumbColor = Color.White,
                     checkedTrackColor = generalColor,
                     uncheckedThumbColor = Color.Gray.copy(alpha = 0.5f),
@@ -415,10 +451,70 @@ fun ModernSettingsSwitch(
                     disabledCheckedTrackColor = Color.Gray.copy(alpha = 0.1f),
                     disabledUncheckedTrackColor = Color.Gray.copy(alpha = 0.1f),
                     disabledUncheckedBorderColor = Color.Gray.copy(alpha = 0.1f)
-                ),
-                enabled = enabled
-            )
-        }
+                )
+            },
+            enabled = enabled
+        )
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // 🚨 DIALOG DE CONFIRMATION
+    // ═══════════════════════════════════════════════════════════
+    if (showDialog) {
+        AlertDialog(
+            containerColor = cardColor,
+            titleContentColor = textPrimary,
+            onDismissRequest = { showDialog = false }, // ✅ Annule sans rien faire
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Warning,
+                    contentDescription = null,
+                    tint = Color(0xFFFF9800), // Orange pour avertissement
+                    modifier = Modifier.size(32.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = if (pendingValue) "Activer l'autorefresh ?" else "Désactiver l'autorefresh ?",
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+            },
+            text = {
+                Text(
+                    text = if (pendingValue) {
+                        "Le rafraîchissement automatique sera activé toutes les ${preferences.refreshIntervalSeconds}s.\n⚠️ Attention : Cela consomme des crédits API. Une fois épuisés, l'application sera temporairement bloquée."
+                    } else {
+                        "Le rafraîchissement automatique sera désactivé. Vous devrez relancer l'application pour actualiser les données."
+                    },
+                    color = textSecondary,
+                    lineHeight = 20.sp
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onCheckedChange(pendingValue)
+                        showDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = generalColor
+                    )
+                ) {
+                    Text("Confirmer")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDialog = false },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = if (textPrimary == Color.Black) Color.Gray else Color.LightGray
+                    )
+                ) {
+                    Text("Annuler")
+                }
+            }
+        )
     }
 }
 
@@ -506,6 +602,7 @@ fun ModernSettingsSlider(
                 inactiveTickColor = generalColor.copy(alpha = 0.3f)
             ),
             modifier = Modifier.padding(horizontal = 8.dp)
+            // TODO : Ajouter le enabled
         )
     }
 }

@@ -29,6 +29,7 @@ class UserPreferencesRepository(private val context: Context) {
         val REFRESH_INTERVAL_SECONDS = intPreferencesKey("refresh_interval_seconds")
         val HIDE_GROUNDED_AIRCRAFT = booleanPreferencesKey("hide_grounded_aircraft")
         val SHOW_AIRCRAFT_LABELS = booleanPreferencesKey("show_aircraft_labels")
+        val IS_AUTO_REFRESH_ENABLED = booleanPreferencesKey("is_auto_refresh_enabled")
     }
 
     /**
@@ -52,7 +53,8 @@ class UserPreferencesRepository(private val context: Context) {
                 showFlightTrails = preferences[PreferencesKeys.SHOW_FLIGHT_TRAILS] ?: false,
                 refreshIntervalSeconds = preferences[PreferencesKeys.REFRESH_INTERVAL_SECONDS] ?: 10,
                 hideGroundedAircraft = preferences[PreferencesKeys.HIDE_GROUNDED_AIRCRAFT] ?: false,
-                showAircraftLabels = preferences[PreferencesKeys.SHOW_AIRCRAFT_LABELS] ?: false
+                showAircraftLabels = preferences[PreferencesKeys.SHOW_AIRCRAFT_LABELS] ?: false,
+                isAutoRefreshEnabled = preferences[PreferencesKeys.IS_AUTO_REFRESH_ENABLED] ?: true
             )
         }
 
@@ -135,6 +137,15 @@ class UserPreferencesRepository(private val context: Context) {
     suspend fun resetToDefaults() {
         context.dataStore.edit { preferences ->
             preferences.clear()
+        }
+    }
+
+    /**
+     * Met à jour l'activation du rafraîchissement automatique
+     */
+    suspend fun updateIsAutoRefreshEnabled(isEnabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.IS_AUTO_REFRESH_ENABLED] = isEnabled
         }
     }
 }

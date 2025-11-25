@@ -29,6 +29,9 @@ data class UserPreferences(
     val hideGroundedAircraft: Boolean = false,
 
     // Afficher les labels des avions sur la carte
-    val showAircraftLabels: Boolean = true
+    val showAircraftLabels: Boolean = true,
+
+    // Activer le rafraîchissement automatique des données
+    val isAutoRefreshEnabled: Boolean = true
 )
 

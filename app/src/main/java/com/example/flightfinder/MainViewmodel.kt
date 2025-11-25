@@ -60,7 +60,7 @@ class MainViewmodel(application: Application) : AndroidViewModel(application) {
 
     private var refreshJob: Job? = null
 
-    private val _isRefreshing = MutableStateFlow(false)
+    private val _isRefreshing = MutableStateFlow(userPreferences.value.isAutoRefreshEnabled)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
     // ═══════════════════════════════════════════════════════════
