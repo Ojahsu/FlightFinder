@@ -1,50 +1,75 @@
 # FlightFinder
 
-FlightFinder est une application Android écrite en Kotlin qui affiche les vols en temps réel de façon similaire à Flightradar. L'objectif est de visualiser les positions d'avions, d'afficher les informations de vol et d'offrir des outils d'exploration pour les utilisateurs intéressés par l'aviation.
+FlightFinder est une application Android développée en Kotlin offrant une visualisation et un suivi d'avions. L'interface est construite avec Jetpack Compose et Material3, et l'application propose des options de personnalisation (thème, options d'affichage, intervalle de rafraîchissement, etc.) sauvegardées localement.
 
-## Fonctionnalités principales (Avion)
-- Carte interactive affichant la position des avions en temps réel.
-- Détail d'un vol : compagnie, numéro de vol, origine/destination, altitude, vitesse, image de l'appareil si disponible.
-- Recherche par numéro de vol, compagnie ou aéroport.
-- Filtrage par altitude, vitesse, type d'appareil.
+## Fonctionnalités principales
 
-## Fonctionnalités secondaire (Météo)
-- Couches météo sur la carte : radar précipitations animé, nuages par niveau d'altitude, vent (barbes/flux) et couverture de foudre.
-- METAR / TAF : récupération et décodage pour les aéroports (affichage lisible, horodatage, tendance).
-- Conditions locales instantanées : température, pression, visibilité, humidité, point de rosée, plafond nuageux.
-- Intégration au vol : affichage météo le long d'un plan de vol (route-based forecast) et suggestions d'altitude/itinéraire pour éviter zones sévères.
+- Carte interactive affichant les avions (icônes redimensionnables).
+- Thème clair / sombre.
+- Options d'affichage :
+    - Masquer les avions au sol.
+    - Afficher / masquer les labels d'avions (option actuellement désactivée dans l'UI).
+    - Afficher les trajectoires (option actuellement désactivée dans l'UI).
+- Auto-rafraîchissement configurable (avec confirmation utilisateur).
+- Sélection de l'intervalle de rafraîchissement (en secondes).
+- Réinitialisation des préférences aux valeurs par défaut.
+- Vidage de la base de données via l'interface (action confirmée).
+- Toutes les préférences sont persistées et appliquées en temps réel.
 
+## Écrans / Pages
 
-- ### Idées suplémentaire:
+- `SettingsScreen` (`app/src/main/java/com/example/flightfinder/vues/SettingsScreen.kt`)  
+  Écran complet de gestion des préférences utilisateur : apparence, options de carte, rafraîchissement, boutons dangereux (réinitialiser, vider BD) et footer d'information.
 
-    - Filtrage et seuils : permettre de filtrer avions ou zones selon conditions (ex. vent>X, pluie>Y, plafond<Z).
-    - Sources recommandées : OpenWeatherMap, Open-Meteo, NOAA, MeteoFrance (selon licence), API METAR/TAF (AVWX), données de foudre/radar via fournisseurs spécialisés.
-    - UX / contrôle : bascule des couches, réglage d'opacité, slider temporel, rafraîchissement configurable, clic sur carte pour afficher détail météo pointuel.
-    - Performance & robustesse : utilisation de tuiles/raster pour radar, cache local pour limiter appels, gestion des erreurs et fallback si source indisponible.
-    - Tests et qualité : parsers METAR/TAF testés, validation des prévisions, indicateurs de fraîcheur des données.
+- Écran principal (carte / liste des vols)  
+  (Référence via `MainViewmodel` — logique métier et actions globales comme `clearDatabase()`).
 
-## Installation
-1. Ouvrir le projet dans Android Studio.
-2. Configurer les clés API (ex. Google Maps / Mapbox / fournisseur de données ADS‑B).
-3. Build & Run sur un émulateur ou un appareil réel.
+![img.png](img.png)
 
-## Architecture suggérée
-- Kotlin + Coroutines pour les appels réseau.
-- MVVM : ViewModel + LiveData / StateFlow.
-- Retrofit pour l'API des vols, Room pour le cache local.
-- Map SDK : Google Maps / Mapbox / OpenStreetMap.
+![img_1.png](img_1.png)
 
-## APIs & données
-- Utiliser une API ADS‑B publique ou un fournisseur (ex. OpenSky Network, ADS‑B Exchange) pour les positions.
-- Mettre en place un cache local pour limiter les appels réseau.
+![img_2.png](img_2.png)
 
-## Confidentialité & limites
-- Expliquer les données collectées (aucune info personnelle si non nécessaire).
-- Indiquer les limites d'exactitude des données ADS‑B.
+## Architecture & Technologies
+
+- Langage : Kotlin (compose UI).
+- UI : Jetpack Compose, Material3.
+- Concurrency : Kotlin Coroutines.
+- Persistance : Datastore de préférences utilisateur (implémentation dans `UserPreferencesRepository`), stockage local pour la base de données (Room ou autre — voir implémentation projet).
+
+## Installation & exécution (Windows)
+
+Prérequis :
+- Android Studio
+- JDK compatible
+
+Étapes :
+1. Ouvrir le projet dans Android Studio : `File > Open` et sélectionner le répertoire du projet.
+2. Synchroniser Gradle si demandé.
+3. Lancer l'application sur un émulateur ou appareil physique via Run / Debug.
+
+## Développement — points d'intérêt
+
+- `SettingsScreen` gère les thèmes et préférences via un `UserPreferencesRepository`. Les actions utilisateur déclenchent des coroutines pour mettre à jour les préférences.
+- Les interrupteurs sensibles (ex. activation de l'auto-rafraîchissement) affichent des dialogues de confirmation avant d'appliquer le changement.
+- Les composants réutilisables dans `SettingsScreen` :
+    - `SettingsSection` : conteneur de sections paramétrables.
+    - `ModernSettingsSwitch` : switch enrichi avec dialogue de confirmation optionnel.
+    - `ModernSettingsSlider` : contrôle de valeur (ex. taille d'icône, intervalle).
+    - `DangerButton` : bouton rouge avec confirmation pour actions destructrices.
+
+Consulter les sources suivantes pour comprendre le flux :
+- `app/src/main/java/com/example/flightfinder/vues/SettingsScreen.kt`
+- `app/src/main/java/com/example/flightfinder/repository/UserPreferencesRepository.kt` (gestion des préférences)
+- `app/src/main/java/com/example/flightfinder/MainViewmodel.kt`
+
+## Bonnes pratiques
+
+- Utiliser la coroutines scope fournie par le ViewModel pour modifications asynchrones.
+- Centraliser les préférences et la logique d'accès aux données dans le repository (`UserPreferencesRepository`).
+- Tester les dialogues de confirmation lors des changements d'options critiques.
 
 ## Contribution
-- Ouvrir une issue pour proposer une fonctionnalité.
-- PRs bienvenues : tests unitaires et documentation attendus.
 
-## Licence
-Indiquer la licence du projet (ex. MIT).
+- Forker le projet, créer une branche descriptive (`feature/nom`), ouvrir une Pull Request avec description claire.
+- Respecter la structure du code et les conventions Kotlin / Compose.
