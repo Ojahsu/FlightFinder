@@ -6,6 +6,7 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.util.Log
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -467,28 +468,57 @@ fun Radar(
                                         color = textSecondary
                                     )
                                 }
-                                Text(
-                                    text = "${((1 - refreshProgress) * userPreferences.refreshIntervalSeconds).toInt()}s",
-                                    fontSize = 10.sp,
-                                    color = generalColor,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                if (userPreferences.isAutoRefreshEnabled){
+                                    Text(
+                                        text = "${((1 - refreshProgress) * userPreferences.refreshIntervalSeconds).toInt()}s",
+                                        fontSize = 10.sp,
+                                        color = generalColor,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                } else {
+                                    Surface(
+                                        shape = RoundedCornerShape(4.dp),
+                                        color = Color(0xFFFF5252).copy(alpha = 0.2f),
+                                        border = BorderStroke(1.dp, Color(0xFFFF5252))
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Cancel,
+                                                contentDescription = null,
+                                                tint = Color(0xFFFF5252),
+                                                modifier = Modifier.size(12.dp)
+                                            )
+                                            Text(
+                                                text = "Auto-rafraîchissement désactivé",
+                                                fontSize = 10.sp,
+                                                color = Color(0xFFFF5252),
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                    }
+                                }
                             }
 
-                            // Barre de progression
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(4.dp)
-                                    .clip(RoundedCornerShape(2.dp))
-                                    .background(textSecondary.copy(alpha = 0.2f))
-                            ) {
+                            if (userPreferences.isAutoRefreshEnabled) {
+                                // Barre de progression
                                 Box(
                                     modifier = Modifier
-                                        .fillMaxWidth(refreshProgress)
-                                        .fillMaxHeight()
-                                        .background(generalColor)
-                                )
+                                        .fillMaxWidth()
+                                        .height(4.dp)
+                                        .clip(RoundedCornerShape(2.dp))
+                                        .background(textSecondary.copy(alpha = 0.2f))
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth(refreshProgress)
+                                            .fillMaxHeight()
+                                            .background(generalColor)
+                                    )
+                                }
                             }
                         }
                     }
