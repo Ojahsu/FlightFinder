@@ -31,16 +31,12 @@ import com.example.flightfinder.models.States
 import com.example.flightfinder.utils.AircraftInfoWindowAdapter
 import kotlinx.coroutines.delay
 import org.osmdroid.config.Configuration
+import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.MapEventsOverlay
 import org.osmdroid.views.overlay.Marker
-import kotlin.compareTo
-import kotlin.text.clear
-import kotlin.text.get
-import kotlin.text.set
-import kotlin.text.toFloat
-import kotlin.text.toInt
 
 // ═══════════════════════════════════════════════════
 // CONFIGURATION DES TUILES DE CARTE
@@ -127,7 +123,7 @@ fun Radar(
             val map = mapViewRef!!
             // Attendre un court instant pour s'assurer que les overlays sont mis à jour
             kotlinx.coroutines.delay(50)
-            // Chercher le marker correspondant (comparer par icao24 ou par position)
+            // Chercher le marker correspondant
             val marker = map.overlays
                 .filterIsInstance<org.osmdroid.views.overlay.Marker>()
                 .firstOrNull { m ->
@@ -135,7 +131,6 @@ fun Radar(
                     if (related is States) {
                         related.icao24 == flight.icao24
                     } else {
-                        // fallback: comparer position si relatedObject n'est pas le même objet
                         val pos = m.position
                         val latMatch = pos.latitude == flight.latitude
                         val lonMatch = pos.longitude == flight.longitude
@@ -144,7 +139,6 @@ fun Radar(
                 }
 
             marker?.let {
-                // centrer et zoomer légèrement pour visibilité
                 map.controller.animateTo(it.position)
                 if (map.zoomLevelDouble < 8.0) {
                     map.controller.setZoom(8.0)
@@ -168,11 +162,10 @@ fun Radar(
                     break
                 }
 
-                delay(50) // Mise à jour toutes les 50ms
+                delay(50)
             }
         }
     }
-
 
     val generalColor = if (userPreferences.isDarkTheme) {
         Color(0xFF2dbdb4)
@@ -265,6 +258,31 @@ fun Radar(
                 // Nettoyage des overlays existants
                 mapView.overlays.clear()
 
+                // ✅ AJOUT : Overlay pour capturer les clics sur la carte
+                val mapEventsReceiver = object : MapEventsReceiver {
+                    override fun singleTapConfirmedHelper(p: GeoPoint?): Boolean {
+                        // Fermer toutes les InfoWindows ouvertes
+                        mapView.overlays
+                            .filterIsInstance<Marker>()
+                            .forEach { marker ->
+                                marker.closeInfoWindow()
+                            }
+
+                        // Effacer la sélection dans le ViewModel
+                        viewModel.clearSelectedFlight()
+
+                        mapView.invalidate()
+                        return true
+                    }
+
+                    override fun longPressHelper(p: GeoPoint?): Boolean {
+                        return false
+                    }
+                }
+
+                val mapEventsOverlay = MapEventsOverlay(mapEventsReceiver)
+                mapView.overlays.add(mapEventsOverlay)
+
                 // Adapter pour les info windows
                 val infoAdapter = AircraftInfoWindowAdapter(mapView, viewModel)
 
@@ -336,10 +354,9 @@ fun Radar(
 
                 visibleFlights = count
 
-                // Utiliser postInvalidate() au lieu de invalidate() pour éviter les problèmes de threading
+                // Utiliser postInvalidate() au lieu de invalidate()
                 mapView.postInvalidate()
             }
-
         )
 
         // ═══════════════════════════════════════════════
@@ -363,9 +380,7 @@ fun Radar(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // ═══════════════════════════════════════════════
                     // EN-TÊTE AVEC BOUTON TOGGLE
-                    // ═══════════════════════════════════════════════
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -375,7 +390,6 @@ fun Radar(
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // Icône radar
                             Surface(
                                 shape = CircleShape,
                                 color = generalColor.copy(alpha = 0.2f)
@@ -390,7 +404,6 @@ fun Radar(
                                 )
                             }
 
-                            // Statistiques
                             Column {
                                 Text(
                                     text = "Radar en direct",
@@ -418,7 +431,6 @@ fun Radar(
                             }
                         }
 
-                        // Bouton toggle pour expand/collapse
                         IconButton(
                             onClick = { isInfoExpanded = !isInfoExpanded },
                             modifier = Modifier.size(32.dp)
@@ -440,9 +452,7 @@ fun Radar(
                         }
                     }
 
-                    // ═══════════════════════════════════════════════
-                    // PROGRESS BAR (conditionnelle)
-                    // ═══════════════════════════════════════════════
+                    // PROGRESS BAR
                     if (isInfoExpanded) {
                         Column(
                             verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -468,7 +478,7 @@ fun Radar(
                                         color = textSecondary
                                     )
                                 }
-                                if (userPreferences.isAutoRefreshEnabled){
+                                if (userPreferences.isAutoRefreshEnabled) {
                                     Text(
                                         text = "${((1 - refreshProgress) * userPreferences.refreshIntervalSeconds).toInt()}s",
                                         fontSize = 10.sp,
@@ -504,7 +514,6 @@ fun Radar(
                             }
 
                             if (userPreferences.isAutoRefreshEnabled) {
-                                // Barre de progression
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -527,7 +536,7 @@ fun Radar(
         }
 
         // ═══════════════════════════════════════════════
-        // BOUTONS CONTRÔLE ZOOM (Overlay en bas à droite)
+        // BOUTONS CONTRÔLE ZOOM
         // ═══════════════════════════════════════════════
         Row(
             modifier = Modifier
@@ -536,7 +545,6 @@ fun Radar(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Bouton Zoom OUT
             FloatingActionButton(
                 onClick = {
                     mapViewRef?.let { map ->
@@ -554,7 +562,6 @@ fun Radar(
                 )
             }
 
-            // Bouton Zoom IN
             FloatingActionButton(
                 onClick = {
                     mapViewRef?.let { map ->
